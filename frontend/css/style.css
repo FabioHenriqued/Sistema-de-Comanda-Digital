@@ -1,0 +1,18 @@
+:root {
+  --color-dark-green: #064e3b;
+  --color-green: #16a34a;
+  --color-white: #ffffff;
+  --color-light-gray: #f3f4f6;
+  --color-danger: #b91c1c;
+  font-family: system-ui, sans-serif;
+  color: var(--color-dark-green);
+  background: var(--color-light-gray);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}

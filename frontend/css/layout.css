@@ -1,0 +1,7 @@
+.home {
+  display: grid;
+  min-block-size: 100vh;
+  min-block-size: 100dvh;
+  place-items: center;
+  padding: 1.5rem;
+}
