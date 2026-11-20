@@ -1,20 +1,4 @@
-.welcome-card {
-  inline-size: min(100%, 36rem);
-  padding: clamp(1.5rem, 5vw, 3rem);
-  border-block-start: 0.25rem solid var(--color-green);
-  border-radius: 1rem;
-  background: var(--color-white);
-  box-shadow: 0 0.25rem 1rem rgb(0 0 0 / 8%);
-  text-align: center;
-}
-
-.welcome-card h1 {
-  margin: 0;
-  font-size: clamp(1.75rem, 5vw, 2.5rem);
-  line-height: 1.2;
-}
-
-.welcome-card .button {
+.button {
   margin-block-start: 1.5rem;
 }
 
@@ -192,4 +176,94 @@
 
 .empty-state__description {
   color: var(--color-muted);
+}
+
+.login-card {
+  inline-size: min(100%, 27rem);
+  padding: clamp(1.25rem, 6vw, 2.5rem);
+  border-block-start: 0.25rem solid var(--color-green);
+}
+
+.login-brand {
+  display: flex;
+  justify-content: center;
+  color: var(--color-dark-green);
+}
+
+.login-brand .brand__icon {
+  color: var(--color-white);
+  background: var(--color-dark-green);
+}
+
+.login-brand small {
+  color: var(--color-muted);
+}
+
+.login-card h1 {
+  margin: 1.5rem 0;
+  color: var(--color-dark-green);
+  font-size: clamp(1.375rem, 5vw, 1.75rem);
+  text-align: center;
+}
+
+.login-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.login-form .field__input,
+.login-form .button {
+  min-block-size: 3rem;
+}
+
+.login-form .field__input[aria-invalid="true"] {
+  border-color: var(--color-danger);
+}
+
+.login-form .message {
+  margin: 0;
+}
+
+.login-form .message:empty {
+  margin-block-end: -1rem;
+}
+
+.password-field {
+  position: relative;
+}
+
+.password-field .field__input {
+  display: block;
+  width: 100%;
+  padding-right: 48px;
+}
+
+.password-field .field__input::-ms-reveal {
+  display: none;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--color-dark-green);
+  background: transparent;
+  cursor: pointer;
+}
+
+.password-toggle:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.password-toggle[aria-label="Mostrar senha"] .password-toggle__slash {
+  visibility: hidden;
 }
