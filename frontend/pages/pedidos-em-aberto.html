@@ -11,9 +11,14 @@
   <body hidden class="app" data-page="pedidos-em-aberto">
     <div id="app-shell"></div>
     <main class="page" id="conteudo">
-      <h1>Pedidos em Aberto</h1>
-      <section class="card page-card" data-placeholder aria-label="Estado da página"></section>
+      <header class="open-orders-header">
+        <h1>Pedidos em Aberto</h1>
+        <a class="button button--primary" href="./novo-pedido.html">+ Novo Pedido</a>
+      </header>
+      <div id="pesquisa-pedidos" class="open-orders-search" role="search"></div>
+      <div id="estado-pedidos" role="status"></div>
+      <ul id="lista-pedidos" class="open-orders-list" aria-label="Pedidos em aberto" hidden></ul>
     </main>
-    <script type="module" src="../js/layout.js"></script>
+    <script type="module" src="../js/pedidos-em-aberto.js"></script>
   </body>
 </html>
