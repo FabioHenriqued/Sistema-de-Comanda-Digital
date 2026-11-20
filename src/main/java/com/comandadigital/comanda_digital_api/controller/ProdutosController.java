@@ -15,4 +15,7 @@ public class ProdutosController {
     @DeleteMapping
     public static void deletarProduto(){}
 
+    @GetMapping
+    public static void listarProduto(){}
+
 }
