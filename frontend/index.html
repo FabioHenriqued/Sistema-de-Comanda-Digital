@@ -8,11 +8,14 @@
     <link rel="stylesheet" href="./css/layout.css" />
     <link rel="stylesheet" href="./css/components.css" />
   </head>
-  <body>
-    <main class="home">
+  <body class="app">
+    <div id="app-shell"></div>
+    <main class="home" id="conteudo">
       <section class="welcome-card" aria-labelledby="welcome-title">
         <h1 id="welcome-title">Comanda Digital Lanchonete</h1>
+        <a class="button button--primary" href="./pages/pedidos-em-aberto.html">Acessar pedidos</a>
       </section>
     </main>
+    <script type="module" src="./js/layout.js"></script>
   </body>
 </html>

@@ -16,3 +16,30 @@
 body {
   margin: 0;
 }
+
+:root {
+  --color-text: #17352c;
+  --color-muted: #50645e;
+  --color-border: #dbe5df;
+  --color-green-light: #e7f5ec;
+  --shadow-soft: 0 0.5rem 1.5rem rgb(6 78 59 / 7%);
+  --radius: 1rem;
+  line-height: 1.5;
+}
+
+body {
+  color: var(--color-text);
+  background: linear-gradient(145deg, #edf5ef, var(--color-light-gray) 55%);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 0.1875rem solid var(--color-green);
+  outline-offset: 0.1875rem;
+}
