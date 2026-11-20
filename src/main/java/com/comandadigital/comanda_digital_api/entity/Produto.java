@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 public class Produto {
     @Id
     @GeneratedValue
-    private int id;
+    private Integer id;
     private String nome;
     private BigDecimal precoUnitario;
     private boolean excluido;

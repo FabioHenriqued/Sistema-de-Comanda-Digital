@@ -2,14 +2,14 @@ package com.comandadigital.comanda_digital_api.service;
 
 import com.comandadigital.comanda_digital_api.entity.Produto;
 import com.comandadigital.comanda_digital_api.repository.ProdutoRepository;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.util.List;
 
 import java.math.BigDecimal;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class ProdutoService {
     private final ProdutoRepository produtoRepository;
 
@@ -25,7 +25,7 @@ public class ProdutoService {
         return produtoRepository.save(produto);
     }
 
-    public Produto editarProduto(int id, Produto produtoAtualizado){
+    public Produto editarProduto(Integer id, Produto produtoAtualizado){
 
         Produto produto = produtoRepository.findById(id).orElseThrow(() -> new RuntimeException("Produto não encontrado"));
 
@@ -43,7 +43,7 @@ public class ProdutoService {
         return produtoRepository.save(produto);
     }
 
-    public void excluirProduto(int id){
+    public void excluirProduto(Integer id){
         Produto produto = produtoRepository.findById(id).orElseThrow(() -> new RuntimeException("Produto não encontrado"));
 
         produto.setExcluido(true);
