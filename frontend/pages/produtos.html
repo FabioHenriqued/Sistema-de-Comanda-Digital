@@ -7,13 +7,19 @@
     <link rel="stylesheet" href="../css/style.css" />
     <link rel="stylesheet" href="../css/layout.css" />
     <link rel="stylesheet" href="../css/components.css" />
+    <link rel="stylesheet" href="../css/produtos.css" />
   </head>
   <body hidden class="app" data-page="produtos">
     <div id="app-shell"></div>
     <main class="page" id="conteudo">
-      <h1>Produtos</h1>
-      <section class="card page-card" data-placeholder aria-label="Estado da página"></section>
+      <header class="products-header">
+        <h1>Gerenciamento de Produtos</h1>
+        <button id="novo-produto" class="button button--primary" type="button">+ Novo Produto</button>
+      </header>
+      <div id="mensagem-produtos" role="status"></div>
+      <div id="estado-produtos" role="status"></div>
+      <ul id="lista-produtos" class="products-list" aria-label="Produtos cadastrados"></ul>
     </main>
-    <script type="module" src="../js/layout.js"></script>
+    <script type="module" src="../js/produtos-page.js"></script>
   </body>
 </html>

@@ -1,3 +1,5 @@
+import { lerColecao } from "./storage.js";
+
 const storageKey = "comanda-digital:pedidos";
 
 const pedidosDemonstrativos = [
@@ -44,12 +46,7 @@ function calcularTotais(pedido) {
 }
 
 function carregarPedidos() {
-  const dados = localStorage.getItem(storageKey);
-  if (dados !== null) return JSON.parse(dados);
-
-  const pedidos = pedidosDemonstrativos.map(calcularTotais);
-  localStorage.setItem(storageKey, JSON.stringify(pedidos));
-  return pedidos;
+  return lerColecao(storageKey, () => pedidosDemonstrativos.map(calcularTotais));
 }
 
 export async function listarPedidosEmAberto() {
