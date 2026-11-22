@@ -12,14 +12,14 @@ import java.math.BigDecimal;
 public class ItemPedido {
     @Id
     @GeneratedValue
-    private int id;
+    private Integer id;
     @ManyToOne
     @JoinColumn(name = "pedido_id")
     private Pedido pedido;
 
     @ManyToOne
     @JoinColumn(name = "produto_id")
-    private Produto produtoId;
+    private Produto produto;
     private int quantidade;
     private BigDecimal precoUnitario;
 }

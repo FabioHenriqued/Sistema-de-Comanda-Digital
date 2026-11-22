@@ -6,6 +6,8 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -13,9 +15,10 @@ import java.time.LocalDateTime;
 public class Pedido {
     @Id
     @GeneratedValue
-    private int id;
-    private int numeroMesa;
-
+    private Integer id;
+    private Integer numeroMesa;
+    @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ItemPedido> itens = new ArrayList<>();
     @ManyToOne
     @JoinColumn(name = "usuario.id")
     private Usuario usuario;
