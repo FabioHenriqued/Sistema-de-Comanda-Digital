@@ -1,4 +1,7 @@
-import { lerColecao } from "./storage.js";
+import { getAuthenticatedUser } from "./auth.js";
+import { listarProdutosAtivos } from "./produtos.js";
+import { lerColecao, salvarColecao } from "./storage.js";
+import { validarNovoPedido, ErroValidacaoPedido } from "./validacao-pedido.js";
 
 const storageKey = "comanda-digital:pedidos";
 
@@ -31,7 +34,7 @@ const pedidosDemonstrativos = [
   },
 ];
 
-function calcularTotais(pedido) {
+export function calcularTotais(pedido) {
   const itens = pedido.itens.map((item) => ({
     ...item,
     subtotalCentavos: item.quantidade * item.precoUnitarioCentavos,
@@ -43,6 +46,48 @@ function calcularTotais(pedido) {
     quantidadeTotal: itens.reduce((total, item) => total + item.quantidade, 0),
     totalParcialCentavos: itens.reduce((total, item) => total + item.subtotalCentavos, 0),
   };
+}
+
+const moeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+
+export function formatarCentavos(centavos) {
+  return moeda.format(centavos / 100);
+}
+
+export async function criarPedido({ mesa, quantidades }) {
+  const numeroMesa = validarNovoPedido(mesa, quantidades);
+
+  return navigator.locks.request(storageKey, async () => {
+    const proprietaria = getAuthenticatedUser();
+    if (!proprietaria) throw new ErroValidacaoPedido("Entre novamente para criar um pedido.");
+
+    const pedidos = carregarPedidos();
+    if (pedidos.some((pedido) => Number(pedido.numeroMesa) === numeroMesa && pedido.status === "EM_ABERTO")) {
+      throw new ErroValidacaoPedido("Já existe um pedido em aberto para esta mesa.", "mesa");
+    }
+
+    const produtos = await listarProdutosAtivos();
+    const itens = Array.from(quantidades, ([produtoId, quantidade]) => {
+      const produto = produtos.find(({ id }) => id === produtoId);
+      if (!produto) throw new ErroValidacaoPedido("Um dos produtos selecionados está indisponível.");
+      return { produtoId, nome: produto.nome, quantidade, precoUnitarioCentavos: produto.precoUnitarioCentavos };
+    });
+
+    const pedido = calcularTotais({
+      id: crypto.randomUUID(),
+      numeroMesa,
+      abertoEm: new Date().toISOString(),
+      proprietariaId: proprietaria.id,
+      status: "EM_ABERTO",
+      itens,
+    });
+    if (!Number.isSafeInteger(pedido.totalParcialCentavos) || !Number.isSafeInteger(pedido.quantidadeTotal)) {
+      throw new ErroValidacaoPedido("O pedido excede o limite de valor ou de quantidade.");
+    }
+
+    salvarColecao(storageKey, [...pedidos, pedido]);
+    return pedido;
+  });
 }
 
 function carregarPedidos() {

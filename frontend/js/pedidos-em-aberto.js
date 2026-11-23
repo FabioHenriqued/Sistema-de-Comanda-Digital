@@ -1,8 +1,7 @@
 import "./layout.js";
 import { createCard, createEmptyState, createSearchField, createStatus, showMessage } from "./components.js";
-import { listarPedidosEmAberto } from "./pedidos.js";
+import { formatarCentavos, listarPedidosEmAberto } from "./pedidos.js";
 
-const moeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const fuso = "America/Fortaleza";
 const data = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeZone: fuso });
 const hora = new Intl.DateTimeFormat("pt-BR", { timeStyle: "short", timeZone: fuso });
@@ -35,7 +34,7 @@ function criarCartao(pedido) {
   const instante = new Date(pedido.abertoEm);
   abertura.textContent = `${data.format(instante)} às ${hora.format(instante)}`;
   link.querySelector("[data-items]").textContent = pedido.quantidadeTotal;
-  link.querySelector(".open-order__total").textContent = moeda.format(pedido.totalParcialCentavos / 100);
+  link.querySelector(".open-order__total").textContent = formatarCentavos(pedido.totalParcialCentavos);
 
   const item = document.createElement("li");
   item.append(createCard(link));
@@ -46,6 +45,12 @@ async function iniciarListagem() {
   const pesquisa = document.querySelector("#pesquisa-pedidos");
   const lista = document.querySelector("#lista-pedidos");
   const estado = document.querySelector("#estado-pedidos");
+  const url = new URL(window.location.href);
+  if (url.searchParams.get("pedidoCriado") === "1") {
+    showMessage(document.querySelector("#confirmacao-pedido"), "Pedido criado com sucesso");
+    url.searchParams.delete("pedidoCriado");
+    history.replaceState(history.state, "", url);
+  }
 
   let pedidos;
   try {

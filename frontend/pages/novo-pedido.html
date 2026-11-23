@@ -7,13 +7,38 @@
     <link rel="stylesheet" href="../css/style.css" />
     <link rel="stylesheet" href="../css/layout.css" />
     <link rel="stylesheet" href="../css/components.css" />
+    <link rel="stylesheet" href="../css/novo-pedido.css" />
   </head>
   <body hidden class="app" data-page="novo-pedido">
     <div id="app-shell"></div>
     <main class="page" id="conteudo">
       <h1>Novo Pedido</h1>
-      <section class="card page-card" data-placeholder aria-label="Estado da página"></section>
+      <form id="novo-pedido" class="new-order" novalidate>
+        <section class="card new-order__catalog" aria-labelledby="titulo-produtos">
+          <label class="field new-order__table">
+            <span class="field__label">Número da Mesa</span>
+            <input class="field__input" name="mesa" inputmode="numeric" placeholder="Ex.: 03"
+              aria-describedby="erro-pedido" required />
+          </label>
+          <h2 id="titulo-produtos" tabindex="-1">Adicionar Produtos</h2>
+          <div id="estado-catalogo" role="status">Carregando produtos…</div>
+          <ul id="catalogo-pedido" class="new-order__list"></ul>
+        </section>
+        <section class="card new-order__summary" aria-labelledby="titulo-resumo">
+          <h2 id="titulo-resumo">Resumo do pedido</h2>
+          <p id="resumo-vazio">Nenhum produto selecionado.</p>
+          <ul id="itens-pedido" class="new-order__list"></ul>
+          <p class="new-order__total" aria-live="polite" aria-atomic="true">
+            Total do pedido <strong id="total-pedido">R$ 0,00</strong>
+          </p>
+          <div id="erro-pedido" role="alert"></div>
+          <div class="new-order__actions">
+            <button class="button button--primary" type="submit" disabled>Salvar Pedido</button>
+            <a class="button button--secondary" href="./pedidos-em-aberto.html">Cancelar</a>
+          </div>
+        </section>
+      </form>
     </main>
-    <script type="module" src="../js/layout.js"></script>
+    <script type="module" src="../js/novo-pedido.js"></script>
   </body>
 </html>
