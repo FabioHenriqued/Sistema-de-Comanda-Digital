@@ -23,6 +23,10 @@ export function getAuthenticatedUser() {
   return owner ? { id: owner.id, name: owner.name, email: owner.email } : null;
 }
 
+export function obterNomeProprietaria(id) {
+  return owners.find((account) => account.id === String(id))?.name;
+}
+
 export function signOut() {
   sessionStorage.removeItem(sessionKey);
 }

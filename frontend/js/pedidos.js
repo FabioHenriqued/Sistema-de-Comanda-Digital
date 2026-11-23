@@ -1,7 +1,9 @@
 import { getAuthenticatedUser } from "./auth.js";
 import { listarProdutosAtivos } from "./produtos.js";
 import { lerColecao, salvarColecao } from "./storage.js";
-import { validarNovoPedido, ErroValidacaoPedido } from "./validacao-pedido.js";
+import {
+  ErroValidacaoPedido, validarNovoPedido, validarQuantidade, validarQuantidadesPedido, validarTotaisPedido,
+} from "./validacao-pedido.js";
 
 const storageKey = "comanda-digital:pedidos";
 
@@ -49,9 +51,35 @@ export function calcularTotais(pedido) {
 }
 
 const moeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+const timeZone = "America/Fortaleza";
+const data = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeZone });
+const hora = new Intl.DateTimeFormat("pt-BR", { timeStyle: "short", timeZone });
+
+export function formatarAbertura(abertoEm) {
+  const instante = new Date(abertoEm);
+  return `${data.format(instante)} às ${hora.format(instante)}`;
+}
+
+export function formatarMesa(numeroMesa) {
+  return `Mesa ${String(numeroMesa).padStart(2, "0")}`;
+}
 
 export function formatarCentavos(centavos) {
-  return moeda.format(centavos / 100);
+  const fracao = centavos % 100;
+  return moeda.formatToParts((centavos - fracao) / 100)
+    .map(({ type, value }) => type === "fraction" ? String(fracao).padStart(2, "0") : value)
+    .join("");
+}
+
+function montarItem(produtos, produtoId, quantidade) {
+  const produto = produtos.find(({ id }) => id === produtoId);
+  if (!produto) throw new ErroValidacaoPedido("Um dos produtos selecionados está indisponível.");
+  return { produtoId, nome: produto.nome, quantidade, precoUnitarioCentavos: produto.precoUnitarioCentavos };
+}
+
+export async function prepararItemPedido(produtoId, quantidade) {
+  validarQuantidade(quantidade);
+  return montarItem(await listarProdutosAtivos(), produtoId, quantidade);
 }
 
 export async function criarPedido({ mesa, quantidades }) {
@@ -67,11 +95,7 @@ export async function criarPedido({ mesa, quantidades }) {
     }
 
     const produtos = await listarProdutosAtivos();
-    const itens = Array.from(quantidades, ([produtoId, quantidade]) => {
-      const produto = produtos.find(({ id }) => id === produtoId);
-      if (!produto) throw new ErroValidacaoPedido("Um dos produtos selecionados está indisponível.");
-      return { produtoId, nome: produto.nome, quantidade, precoUnitarioCentavos: produto.precoUnitarioCentavos };
-    });
+    const itens = Array.from(quantidades, ([produtoId, quantidade]) => montarItem(produtos, produtoId, quantidade));
 
     const pedido = calcularTotais({
       id: crypto.randomUUID(),
@@ -81,9 +105,7 @@ export async function criarPedido({ mesa, quantidades }) {
       status: "EM_ABERTO",
       itens,
     });
-    if (!Number.isSafeInteger(pedido.totalParcialCentavos) || !Number.isSafeInteger(pedido.quantidadeTotal)) {
-      throw new ErroValidacaoPedido("O pedido excede o limite de valor ou de quantidade.");
-    }
+    validarTotaisPedido(pedido);
 
     salvarColecao(storageKey, [...pedidos, pedido]);
     return pedido;
@@ -99,4 +121,54 @@ export async function listarPedidosEmAberto() {
     .filter((pedido) => pedido.status === "EM_ABERTO")
     .sort((a, b) => Date.parse(a.abertoEm) - Date.parse(b.abertoEm))
     .map(calcularTotais);
+}
+
+export async function obterPedido(id) {
+  const pedido = carregarPedidos().find((registro) => String(registro.id) === id);
+  return pedido ? calcularTotais(pedido) : null;
+}
+
+export async function atualizarPedido(id, itensEditados, itensOriginais) {
+  validarQuantidadesPedido(itensEditados.map(({ quantidade }) => quantidade));
+
+  return navigator.locks.request(storageKey, async () => {
+    if (!getAuthenticatedUser()) throw new ErroValidacaoPedido("Entre novamente para editar o pedido.");
+
+    const pedidos = carregarPedidos();
+    const indice = pedidos.findIndex((pedido) => String(pedido.id) === id);
+    const pedido = pedidos[indice];
+    if (!pedido) throw new ErroValidacaoPedido("Pedido não encontrado.");
+    if (pedido.status !== "EM_ABERTO") throw new ErroValidacaoPedido("Este pedido já não está em aberto.");
+
+    const atuais = calcularTotais(pedido).itens;
+    if (JSON.stringify(atuais) !== JSON.stringify(itensOriginais)) {
+      throw new ErroValidacaoPedido("O pedido foi alterado em outra aba. Reabra os detalhes para continuar.");
+    }
+
+    const IDs = new Set(itensEditados.map(({ produtoId }) => produtoId));
+    if (IDs.size !== itensEditados.length) throw new ErroValidacaoPedido("O pedido contém produtos duplicados.");
+
+    const anteriores = new Map(atuais.map((item) => [item.produtoId, item]));
+    const novos = itensEditados.filter(({ produtoId }) => !anteriores.has(produtoId));
+    if (novos.length) {
+      const ativos = new Set((await listarProdutosAtivos()).map(({ id }) => id));
+      if (novos.some(({ produtoId }) => !ativos.has(produtoId))) {
+        throw new ErroValidacaoPedido("Remova os novos produtos que ficaram indisponíveis no cadastro.");
+      }
+    }
+
+    const itens = itensEditados.map((item) => {
+      const { produtoId, quantidade } = item;
+      const { nome, precoUnitarioCentavos } = anteriores.get(produtoId) ?? item;
+      if (!Number.isSafeInteger(precoUnitarioCentavos) || precoUnitarioCentavos <= 0) {
+        throw new ErroValidacaoPedido("O pedido contém um preço unitário inválido.");
+      }
+      return { produtoId, nome, precoUnitarioCentavos, quantidade };
+    });
+    const atualizado = calcularTotais({ ...pedido, itens });
+    validarTotaisPedido(atualizado);
+    pedidos[indice] = atualizado;
+    salvarColecao(storageKey, pedidos);
+    return atualizado;
+  });
 }

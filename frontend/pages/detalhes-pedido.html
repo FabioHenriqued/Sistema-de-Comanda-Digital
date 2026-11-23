@@ -7,14 +7,43 @@
     <link rel="stylesheet" href="../css/style.css" />
     <link rel="stylesheet" href="../css/layout.css" />
     <link rel="stylesheet" href="../css/components.css" />
+    <link rel="stylesheet" href="../css/detalhes-pedido.css" />
   </head>
   <body hidden class="app" data-page="pedidos-em-aberto">
     <div id="app-shell"></div>
     <main class="page" id="conteudo">
       <h1>Detalhes do Pedido</h1>
-      <a class="button button--secondary open-orders-back" href="./pedidos-em-aberto.html">Voltar para Pedidos em Aberto</a>
-      <section class="card page-card" data-placeholder aria-label="Estado da página"></section>
+      <a class="button button--secondary open-orders-back" href="./pedidos-em-aberto.html">Voltar</a>
+      <div id="estado-detalhes" role="status">Carregando pedido…</div>
+      <div id="detalhes-pedido" class="order-details" hidden>
+        <section class="card" aria-labelledby="mesa-pedido">
+          <div class="order-details__heading">
+            <h2 id="mesa-pedido"></h2>
+            <div id="status-pedido"></div>
+          </div>
+          <dl class="open-order__facts">
+            <div><dt>Abertura</dt><dd><time id="abertura-pedido"></time></dd></div>
+            <div><dt>Proprietária responsável</dt><dd id="proprietaria-pedido"></dd></div>
+          </dl>
+        </section>
+        <section class="card" aria-labelledby="titulo-itens">
+          <div class="order-details__heading">
+            <h2 id="titulo-itens">Itens do pedido</h2>
+            <button type="button" id="adicionar-produto" class="button button--secondary" hidden>+ Adicionar Produto</button>
+          </div>
+          <p id="detalhes-itens-vazios" hidden>Nenhum produto no pedido.</p>
+          <ul id="detalhes-itens" class="order-details__items"></ul>
+          <p class="order-details__total" aria-live="polite" aria-atomic="true">
+            Total parcial <strong id="detalhes-total"></strong>
+          </p>
+          <div id="erro-edicao" role="alert"></div>
+          <div id="acoes-edicao" class="order-details__actions" hidden>
+            <button type="button" id="salvar-alteracoes" class="button button--primary">Salvar Alterações</button>
+            <a class="button button--secondary" href="./pedidos-em-aberto.html">Cancelar</a>
+          </div>
+        </section>
+      </div>
     </main>
-    <script type="module" src="../js/layout.js"></script>
+    <script type="module" src="../js/detalhes-pedido.js"></script>
   </body>
 </html>

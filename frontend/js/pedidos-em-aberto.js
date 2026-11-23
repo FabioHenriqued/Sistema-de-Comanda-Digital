@@ -1,10 +1,6 @@
 import "./layout.js";
 import { createCard, createEmptyState, createSearchField, createStatus, showMessage } from "./components.js";
-import { formatarCentavos, listarPedidosEmAberto } from "./pedidos.js";
-
-const fuso = "America/Fortaleza";
-const data = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeZone: fuso });
-const hora = new Intl.DateTimeFormat("pt-BR", { timeStyle: "short", timeZone: fuso });
+import { formatarAbertura, formatarCentavos, formatarMesa, listarPedidosEmAberto } from "./pedidos.js";
 
 function filtrarPorMesa(pedidos, termo) {
   const numero = termo.trim().replace(/^0+(?=[0-9])/, "");
@@ -27,12 +23,11 @@ function criarCartao(pedido) {
     <span class="open-order__details">Ver detalhes <span aria-hidden="true">→</span></span>
   `;
 
-  link.querySelector("h2").textContent = `Mesa ${String(pedido.numeroMesa).padStart(2, "0")}`;
+  link.querySelector("h2").textContent = formatarMesa(pedido.numeroMesa);
   link.querySelector(".open-order__heading").append(createStatus("Em aberto", "success"));
   const abertura = link.querySelector("time");
   abertura.dateTime = pedido.abertoEm;
-  const instante = new Date(pedido.abertoEm);
-  abertura.textContent = `${data.format(instante)} às ${hora.format(instante)}`;
+  abertura.textContent = formatarAbertura(pedido.abertoEm);
   link.querySelector("[data-items]").textContent = pedido.quantidadeTotal;
   link.querySelector(".open-order__total").textContent = formatarCentavos(pedido.totalParcialCentavos);
 
@@ -46,9 +41,14 @@ async function iniciarListagem() {
   const lista = document.querySelector("#lista-pedidos");
   const estado = document.querySelector("#estado-pedidos");
   const url = new URL(window.location.href);
-  if (url.searchParams.get("pedidoCriado") === "1") {
-    showMessage(document.querySelector("#confirmacao-pedido"), "Pedido criado com sucesso");
-    url.searchParams.delete("pedidoCriado");
+  const confirmacoes = [
+    ["pedidoCriado", "Pedido criado com sucesso"],
+    ["pedidoAtualizado", "Pedido atualizado com sucesso"],
+  ];
+  const confirmacao = confirmacoes.find(([chave]) => url.searchParams.get(chave) === "1");
+  if (confirmacao) {
+    showMessage(document.querySelector("#confirmacao-pedido"), confirmacao[1]);
+    url.searchParams.delete(confirmacao[0]);
     history.replaceState(history.state, "", url);
   }
 
