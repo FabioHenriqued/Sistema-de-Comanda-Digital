@@ -20,7 +20,7 @@ public class Pedido {
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ItemPedido> itens = new ArrayList<>();
     @ManyToOne
-    @JoinColumn(name = "usuario.id")
+    @JoinColumn(name = "usuario_id")
     private Usuario usuario;
 
     @Enumerated(EnumType.STRING)

@@ -1,6 +1,13 @@
 package com.comandadigital.comanda_digital_api.service;
 
 import com.comandadigital.comanda_digital_api.entity.*;
+import com.comandadigital.comanda_digital_api.entity.requestdto.EditarPedidoRequestDTO;
+import com.comandadigital.comanda_digital_api.entity.requestdto.ItemPedidoRequestDTO;
+import com.comandadigital.comanda_digital_api.entity.requestdto.PedidoRequestDTO;
+import com.comandadigital.comanda_digital_api.entity.responsedto.ItemPedidoResponseDTO;
+import com.comandadigital.comanda_digital_api.entity.responsedto.PedidoResponseDTO;
+import com.comandadigital.comanda_digital_api.exception.RecursoNaoEncontradoException;
+import com.comandadigital.comanda_digital_api.exception.RegraNegocioException;
 import com.comandadigital.comanda_digital_api.repository.PedidoRepository;
 
 import com.comandadigital.comanda_digital_api.repository.ProdutoRepository;
@@ -20,18 +27,22 @@ public class PedidoService {
 
     @Transactional
     public PedidoResponseDTO cadastrarPedido(PedidoRequestDTO requestDTO){
-        if(requestDTO.numeroMesa() <= 0 || requestDTO.numeroMesa() == null){
-            throw new RuntimeException("Numero da mesa invalido");
+        if(requestDTO == null){
+            throw new RegraNegocioException("Dados do pedido não informados");
+        }
+
+        if(requestDTO.numeroMesa() == null || requestDTO.numeroMesa() <= 0){
+            throw new RegraNegocioException("Numero da mesa invalido");
         }
 
         boolean pedidoAberto = pedidoRepository.existsByNumeroMesaAndStatus(requestDTO.numeroMesa(), StatusPedido.EM_ABERTO);
 
         if(pedidoAberto) {
-            throw new RuntimeException("Ja existe um pedido em aberto com essa mesa");
+            throw new RegraNegocioException("Ja existe um pedido em aberto com essa mesa");
         }
 
         if(requestDTO.itens() == null || requestDTO.itens().isEmpty()){
-            throw new RuntimeException("O pedido deve conter pelo menos um item");
+            throw new RegraNegocioException("O pedido deve conter pelo menos um item");
         }
 
         Pedido pedido = new Pedido();
@@ -43,14 +54,22 @@ public class PedidoService {
         BigDecimal valorTotal = BigDecimal.ZERO;
 
         for(ItemPedidoRequestDTO itemPedidoRequestDTO : requestDTO.itens()) {
-            if(itemPedidoRequestDTO.quantidade() <= 0 || itemPedidoRequestDTO.quantidade() == null){
-                throw new RuntimeException("Quantidade inválida");
+            if(itemPedidoRequestDTO == null){
+                throw new RegraNegocioException("Item do pedido inválido");
             }
 
-            Produto produto = produtoRepository.findById(itemPedidoRequestDTO.produtoId()).orElseThrow(() -> new RuntimeException("Produto não encontrado"));
+            if(itemPedidoRequestDTO.produtoId() == null){
+                throw new RegraNegocioException("ID do produto não informado");
+            }
+
+            if(itemPedidoRequestDTO.quantidade() == null || itemPedidoRequestDTO.quantidade() <= 0){
+                throw new RegraNegocioException("Quantidade inválida");
+            }
+
+            Produto produto = produtoRepository.findById(itemPedidoRequestDTO.produtoId()).orElseThrow(() -> new RecursoNaoEncontradoException("Produto não encontrado"));
 
             if(produto.isExcluido()) {
-                throw new RuntimeException("Produto indisponivel");
+                throw new RecursoNaoEncontradoException("Produto indisponivel");
             }
 
             ItemPedido item = new ItemPedido();
@@ -76,14 +95,14 @@ public class PedidoService {
 
     @Transactional
     public PedidoResponseDTO editarPedido(Integer id, EditarPedidoRequestDTO editarPedidoRequestDTO){
-        Pedido pedido = pedidoRepository.findById(id).orElseThrow(() -> new RuntimeException("Pedido não encontrado"));
+        Pedido pedido = pedidoRepository.findById(id).orElseThrow(() -> new RecursoNaoEncontradoException("Pedido não encontrado"));
 
         if(pedido.getStatus() == StatusPedido.FINALIZADO){
-            throw new RuntimeException("Não é possivel editar pedido ja finalizado");
+            throw new RegraNegocioException("Não é possivel editar pedido ja finalizado");
         }
 
         if(editarPedidoRequestDTO == null || editarPedidoRequestDTO.itens() == null || editarPedidoRequestDTO.itens().isEmpty()){
-            throw new RuntimeException("O pedido deve conter pelo menos um item");
+            throw new RegraNegocioException("O pedido deve conter pelo menos um item");
         }
 
         pedido.getItens().clear();
@@ -92,17 +111,17 @@ public class PedidoService {
 
         for(ItemPedidoRequestDTO pedidoRequestDTO : editarPedidoRequestDTO.itens()){
             if(pedidoRequestDTO == null || pedidoRequestDTO.quantidade() == null || pedidoRequestDTO.quantidade() <= 0){
-                throw new RuntimeException("Quantidade de item deve ser maior que 0");
+                throw new RegraNegocioException("Quantidade de item deve ser maior que 0");
             }
 
             if(pedidoRequestDTO.produtoId() == null){
-                throw new RuntimeException("ID não informado");
+                throw new RegraNegocioException("ID não informado");
             }
 
-            Produto produto = produtoRepository.findById(pedidoRequestDTO.produtoId()).orElseThrow(() -> new RuntimeException("Produto não encontrado"));
+            Produto produto = produtoRepository.findById(pedidoRequestDTO.produtoId()).orElseThrow(() -> new RecursoNaoEncontradoException("Produto não encontrado"));
 
             if(produto.isExcluido()){
-                throw new RuntimeException("Produto indisponivel");
+                throw new RegraNegocioException("Produto indisponivel");
             }
 
             ItemPedido itemPedido = new ItemPedido();
@@ -126,6 +145,7 @@ public class PedidoService {
         return converterParaDTO(pedidoEditado);
     }
 
+    @Transactional(readOnly = true)
     public List<PedidoResponseDTO> listarPedidos(Integer numeroMesa){
         List<Pedido> pedidosList;
 
@@ -138,11 +158,12 @@ public class PedidoService {
         return pedidosList.stream().map(this::converterParaDTO).toList();
     }
 
+    @Transactional
     public PedidoResponseDTO finalizarPedido(Integer id) {
-        Pedido pedido = pedidoRepository.findById(id).orElseThrow(() -> new RuntimeException("Pedido não encontrado"));
+        Pedido pedido = pedidoRepository.findById(id).orElseThrow(() -> new RecursoNaoEncontradoException("Pedido não encontrado"));
 
         if(pedido.getStatus() != StatusPedido.EM_ABERTO){
-            throw new RuntimeException("Pedido já finalizado");
+            throw new RegraNegocioException("Pedido já finalizado");
         }
 
         pedido.setStatus(StatusPedido.FINALIZADO);
@@ -153,8 +174,9 @@ public class PedidoService {
         return converterParaDTO(pedidoFinalizado);
     }
 
+    @Transactional
     public void excluirPedido(Integer id){
-        Pedido pedido = pedidoRepository.findById(id).orElseThrow(() -> new RuntimeException("Pedido não encontrado"));
+        Pedido pedido = pedidoRepository.findById(id).orElseThrow(() -> new RecursoNaoEncontradoException("Pedido não encontrado"));
 
         pedidoRepository.delete(pedido);
     }

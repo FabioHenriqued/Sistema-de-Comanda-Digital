@@ -1,9 +1,8 @@
 package com.comandadigital.comanda_digital_api.controller;
 
-import com.comandadigital.comanda_digital_api.entity.EditarPedidoRequestDTO;
-import com.comandadigital.comanda_digital_api.entity.Pedido;
-import com.comandadigital.comanda_digital_api.entity.PedidoRequestDTO;
-import com.comandadigital.comanda_digital_api.entity.PedidoResponseDTO;
+import com.comandadigital.comanda_digital_api.entity.requestdto.EditarPedidoRequestDTO;
+import com.comandadigital.comanda_digital_api.entity.requestdto.PedidoRequestDTO;
+import com.comandadigital.comanda_digital_api.entity.responsedto.PedidoResponseDTO;
 import com.comandadigital.comanda_digital_api.service.PedidoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -36,7 +35,7 @@ public class PedidosController {
         return pedidoService.finalizarPedido(id);
     }
 
-    @DeleteMapping("{id}")
+    @DeleteMapping("/{id}")
     public void excluirPedido(@PathVariable Integer id){
         pedidoService.excluirPedido(id);
     }

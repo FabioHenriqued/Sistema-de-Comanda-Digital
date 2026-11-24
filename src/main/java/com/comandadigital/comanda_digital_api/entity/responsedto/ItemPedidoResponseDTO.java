@@ -1,4 +1,4 @@
-package com.comandadigital.comanda_digital_api.entity;
+package com.comandadigital.comanda_digital_api.entity.responsedto;
 
 import java.math.BigDecimal;
 
