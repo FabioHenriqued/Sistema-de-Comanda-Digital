@@ -128,6 +128,51 @@ export async function obterPedido(id) {
   return pedido ? calcularTotais(pedido) : null;
 }
 
+export async function finalizarPedido(id, itensConfirmados) {
+  return navigator.locks.request(storageKey, () => {
+    if (!getAuthenticatedUser()) throw new ErroValidacaoPedido("Entre novamente para finalizar o pedido.");
+
+    const pedidos = carregarPedidos();
+    const indice = pedidos.findIndex((pedido) => String(pedido.id) === id);
+    const pedido = pedidos[indice];
+    if (!pedido) throw new ErroValidacaoPedido("Pedido não encontrado.");
+    if (pedido.status === "FINALIZADO") throw new ErroValidacaoPedido("Este pedido já foi finalizado.");
+    if (pedido.status !== "EM_ABERTO") throw new ErroValidacaoPedido("Este pedido não está em aberto.");
+    if (!pedido.itens.length) throw new ErroValidacaoPedido("Não é possível finalizar um pedido sem produtos.");
+
+    const atualizado = calcularTotais(pedido);
+    validarTotaisPedido(atualizado);
+    if (itensConfirmados && JSON.stringify(atualizado.itens) !== JSON.stringify(itensConfirmados)) {
+      throw new ErroValidacaoPedido("O pedido foi alterado em outra aba. Reabra os detalhes para continuar.");
+    }
+
+    atualizado.status = "FINALIZADO";
+    atualizado.finalizadoEm = new Date().toISOString();
+    pedidos[indice] = atualizado;
+    salvarColecao(storageKey, pedidos);
+    return atualizado;
+  });
+}
+
+export async function excluirPedido(id) {
+  return navigator.locks.request(storageKey, () => {
+    if (!getAuthenticatedUser()) {
+      throw new ErroValidacaoPedido("Entre novamente para excluir o pedido.");
+    }
+
+    const pedidos = carregarPedidos();
+    const indice = pedidos.findIndex((pedido) => String(pedido.id) === id);
+    if (indice === -1) throw new ErroValidacaoPedido("Este pedido não está mais disponível.");
+    if (pedidos[indice].status === "FINALIZADO") {
+      throw new ErroValidacaoPedido("Este pedido já foi finalizado.");
+    }
+
+    // Os itens fazem parte do pedido e são removidos na mesma gravação.
+    pedidos.splice(indice, 1);
+    salvarColecao(storageKey, pedidos);
+  });
+}
+
 export async function atualizarPedido(id, itensEditados, itensOriginais) {
   validarQuantidadesPedido(itensEditados.map(({ quantidade }) => quantidade));
 

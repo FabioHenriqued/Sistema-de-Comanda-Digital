@@ -23,8 +23,17 @@
           </div>
           <dl class="open-order__facts">
             <div><dt>Abertura</dt><dd><time id="abertura-pedido"></time></dd></div>
+            <div id="finalizacao-pedido" hidden><dt>Finalização</dt><dd>Data e horário indisponíveis</dd></div>
             <div><dt>Proprietária responsável</dt><dd id="proprietaria-pedido"></dd></div>
           </dl>
+          <div class="order-details__actions order-details__order-actions">
+            <button type="button" id="finalizar-pedido" class="button button--primary" aria-haspopup="dialog" hidden>
+              Finalizar Pedido
+            </button>
+            <button type="button" id="excluir-pedido" class="button button--danger" aria-haspopup="dialog" hidden>
+              Excluir Pedido
+            </button>
+          </div>
         </section>
         <section class="card" aria-labelledby="titulo-itens">
           <div class="order-details__heading">
@@ -34,7 +43,7 @@
           <p id="detalhes-itens-vazios" hidden>Nenhum produto no pedido.</p>
           <ul id="detalhes-itens" class="order-details__items"></ul>
           <p class="order-details__total" aria-live="polite" aria-atomic="true">
-            Total parcial <strong id="detalhes-total"></strong>
+            <span id="rotulo-total">Total parcial</span> <strong id="detalhes-total"></strong>
           </p>
           <div id="erro-edicao" role="alert"></div>
           <div id="acoes-edicao" class="order-details__actions" hidden>

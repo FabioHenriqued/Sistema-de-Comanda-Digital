@@ -2,13 +2,97 @@ import "./layout.js";
 import { obterNomeProprietaria } from "./auth.js";
 import { createButton, createField, createModal, createStatus, showMessage } from "./components.js";
 import {
-  atualizarPedido, calcularTotais, formatarAbertura, formatarCentavos, formatarMesa, obterPedido, prepararItemPedido,
+  atualizarPedido, calcularTotais, excluirPedido, finalizarPedido, formatarAbertura, formatarCentavos, formatarMesa,
+  obterPedido, prepararItemPedido,
 } from "./pedidos.js";
 import { listarProdutosAtivos } from "./produtos.js";
 import { ErroValidacaoPedido, validarQuantidade } from "./validacao-pedido.js";
 
 function mostrarFalha(elemento, erro, mensagemPadrao) {
   showMessage(elemento, erro instanceof ErroValidacaoPedido ? erro.message : mensagemPadrao, "error");
+}
+
+function confirmarExclusao(pedido) {
+  const pergunta = document.createElement("p");
+  pergunta.id = "pergunta-exclusao";
+  const mesa = document.createElement("strong");
+  mesa.textContent = formatarMesa(pedido.numeroMesa);
+  pergunta.append("Deseja realmente excluir o pedido da ", mesa, "?");
+
+  const aviso = document.createElement("p");
+  aviso.id = "aviso-exclusao";
+  aviso.textContent = "Esta ação é permanente e não poderá ser desfeita.";
+
+  abrirConfirmacao({
+    titulo: "Excluir Pedido", conteudo: [pergunta, aviso], variant: "danger",
+    classe: "order-delete-modal", botao: "Excluir Pedido", confirmacao: "pedidoExcluido",
+    executar: () => excluirPedido(String(pedido.id)),
+    mensagemFalha: "Não foi possível excluir o pedido. Tente novamente.",
+  });
+}
+
+function confirmarFinalizacao(pedido, temAlteracoes) {
+  const resumo = document.createElement("dl");
+  resumo.className = "open-order__facts";
+  resumo.innerHTML = `
+    <div><dt>Mesa</dt><dd data-mesa></dd></div>
+    <div><dt>Quantidade total de itens</dt><dd data-itens></dd></div>
+    <div class="order-details__total"><dt>Valor total</dt><dd><strong data-total></strong></dd></div>
+  `;
+  resumo.querySelector("[data-mesa]").textContent = formatarMesa(pedido.numeroMesa);
+  resumo.querySelector("[data-itens]").textContent = pedido.quantidadeTotal;
+  resumo.querySelector("[data-total]").textContent = formatarCentavos(pedido.totalParcialCentavos);
+
+  const pergunta = document.createElement("p");
+  pergunta.id = "pergunta-finalizacao";
+  pergunta.textContent = "Deseja realmente finalizar este pedido?";
+  const aviso = document.createElement("p");
+  aviso.id = "aviso-finalizacao";
+  aviso.textContent = "Após a finalização, o pedido não poderá mais ser editado.";
+  if (temAlteracoes) aviso.append(" As alterações não salvas serão descartadas.");
+
+  abrirConfirmacao({
+    titulo: "Finalizar Pedido", conteudo: [resumo, pergunta, aviso], variant: "primary",
+    classe: "order-finish-modal", botao: "Confirmar Finalização", confirmacao: "pedidoFinalizado",
+    executar: () => finalizarPedido(String(pedido.id), pedido.itens),
+    mensagemFalha: "Não foi possível finalizar o pedido. Tente novamente.",
+  });
+}
+
+function abrirConfirmacao({ titulo, conteudo, variant, classe, botao, confirmacao, executar, mensagemFalha }) {
+  const erro = document.createElement("div");
+  erro.setAttribute("role", "alert");
+  const modal = createModal(titulo, ...conteudo, erro);
+  modal.classList.add(classe);
+  modal.setAttribute("aria-describedby", conteudo.map(({ id }) => id).filter(Boolean).join(" "));
+
+  const acoes = modal.querySelector(".modal__actions");
+  const cancelar = acoes.querySelector("button");
+  cancelar.textContent = "Cancelar";
+  cancelar.autofocus = true;
+  const confirmar = createButton(botao, {
+    variant,
+    async onClick() {
+      if (confirmar.disabled) return;
+      confirmar.disabled = cancelar.disabled = true;
+      erro.textContent = "";
+      try {
+        await executar();
+        window.location.replace(`./pedidos-em-aberto.html?${confirmacao}=1`);
+      } catch (falha) {
+        mostrarFalha(erro, falha, mensagemFalha);
+        confirmar.disabled = cancelar.disabled = false;
+        cancelar.focus();
+      }
+    },
+  });
+  acoes.append(confirmar);
+  modal.addEventListener("cancel", (evento) => {
+    if (confirmar.disabled) evento.preventDefault();
+  });
+  modal.addEventListener("close", () => modal.remove(), { once: true });
+  document.body.append(modal);
+  modal.showModal();
 }
 
 async function abrirCatalogo(incluirItem, precoRegistrado) {
@@ -136,21 +220,41 @@ function exibirPedido(pedido) {
   const erro = document.querySelector("#erro-edicao");
   const adicionar = document.querySelector("#adicionar-produto");
   const salvar = document.querySelector("#salvar-alteracoes");
+  const excluir = document.querySelector("#excluir-pedido");
+  const finalizar = document.querySelector("#finalizar-pedido");
   const editavel = pedido.status === "EM_ABERTO";
+  const finalizado = pedido.status === "FINALIZADO";
   const originais = new Map(pedido.itens.map((item) => [item.produtoId, item]));
   const rascunho = new Map(originais);
   let salvando = false;
 
   titulo.textContent = formatarMesa(pedido.numeroMesa);
-  const status = editavel ? "Em aberto" : pedido.status === "FINALIZADO" ? "Finalizado" : pedido.status;
+  const status = editavel ? "Em aberto" : finalizado ? "Finalizado" : pedido.status;
   document.querySelector("#status-pedido").append(createStatus(status, editavel ? "success" : "neutral"));
   abertura.dateTime = pedido.abertoEm;
   abertura.textContent = formatarAbertura(pedido.abertoEm);
   document.querySelector("#proprietaria-pedido").textContent =
     obterNomeProprietaria(pedido.proprietariaId) ?? `ID ${pedido.proprietariaId}`;
+  if (finalizado) {
+    const encerramento = document.querySelector("#finalizacao-pedido");
+    encerramento.hidden = false;
+    const data = encerramento.querySelector("dd");
+    if (Number.isFinite(Date.parse(pedido.finalizadoEm))) {
+      const horario = document.createElement("time");
+      horario.dateTime = pedido.finalizadoEm;
+      horario.textContent = formatarAbertura(pedido.finalizadoEm);
+      data.replaceChildren(horario);
+    }
+    document.querySelector("#rotulo-total").textContent = "Valor total";
+  } else {
+    excluir.hidden = false;
+    excluir.addEventListener("click", () => confirmarExclusao(pedido));
+  }
 
   function renderizarItens() {
-    const { itens, totalParcialCentavos } = calcularTotais({ itens: [...rascunho.values()] });
+    const { itens, totalParcialCentavos } = editavel
+      ? calcularTotais({ itens: [...rascunho.values()] })
+      : pedido;
     lista.replaceChildren(...itens.map((item) => criarLinha(item, editavel, alterarQuantidade)));
     vazio.hidden = itens.length > 0;
     total.textContent = formatarCentavos(totalParcialCentavos);
@@ -169,6 +273,11 @@ function exibirPedido(pedido) {
   }
 
   if (editavel) {
+    finalizar.hidden = false;
+    finalizar.addEventListener("click", () => {
+      const temAlteracoes = JSON.stringify([...rascunho.values()]) !== JSON.stringify(pedido.itens);
+      confirmarFinalizacao(pedido, temAlteracoes);
+    });
     adicionar.hidden = document.querySelector("#acoes-edicao").hidden = false;
     adicionar.addEventListener("click", () => {
       abrirCatalogo((item) => {
@@ -183,14 +292,14 @@ function exibirPedido(pedido) {
     });
     salvar.addEventListener("click", async () => {
       if (salvando) return;
-      salvando = salvar.disabled = adicionar.disabled = true;
+      salvando = salvar.disabled = adicionar.disabled = excluir.disabled = finalizar.disabled = true;
       erro.textContent = "";
       try {
         await atualizarPedido(String(pedido.id), [...rascunho.values()], pedido.itens);
         window.location.replace("./pedidos-em-aberto.html?pedidoAtualizado=1");
       } catch (falha) {
         mostrarFalha(erro, falha, "Não foi possível salvar as alterações. Tente novamente.");
-        salvando = salvar.disabled = adicionar.disabled = false;
+        salvando = salvar.disabled = adicionar.disabled = excluir.disabled = finalizar.disabled = false;
       }
     });
     document.querySelectorAll(".open-orders-back, #acoes-edicao a").forEach((link) => {
@@ -215,6 +324,21 @@ async function iniciarDetalhes() {
     }
     exibirPedido(pedido);
     estado.textContent = "";
+    window.addEventListener("pageshow", async (evento) => {
+      if (!evento.persisted || document.body.hidden) return;
+      try {
+        const atual = await obterPedido(id);
+        if (atual) {
+          if (atual.status !== pedido.status) window.location.reload();
+          return;
+        }
+        document.querySelector("#detalhes-pedido").hidden = true;
+        showMessage(estado, "Pedido não encontrado.", "error");
+      } catch {
+        document.querySelector("#detalhes-pedido").hidden = true;
+        showMessage(estado, "Não foi possível carregar o pedido.", "error");
+      }
+    });
   } catch {
     showMessage(estado, "Não foi possível carregar o pedido.", "error");
   }

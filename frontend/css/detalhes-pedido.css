@@ -36,7 +36,9 @@
 
 .order-details__actions .button,
 .order-details__heading .button,
-.order-details__picker .button {
+.order-details__picker .button,
+.order-delete-modal .button,
+.order-finish-modal .button {
   margin: 0;
 }
 
@@ -69,10 +71,28 @@
   font-size: 1.375rem;
 }
 
-.order-details__picker .modal__actions {
+.order-details__picker .modal__actions,
+.order-delete-modal .modal__actions,
+.order-finish-modal .modal__actions {
   flex-wrap: wrap;
   gap: 0.5rem;
   margin: 0;
+}
+
+.order-delete-modal #aviso-exclusao {
+  color: var(--color-danger);
+}
+
+.order-delete-modal [role="alert"]:not(:empty),
+.order-finish-modal [role="alert"]:not(:empty) {
+  margin-block-end: 1rem;
+}
+
+@media (max-width: 30rem) {
+  .order-details__order-actions .button,
+  .order-finish-modal .button {
+    flex: 1 1 100%;
+  }
 }
 
 #erro-edicao:not(:empty) {

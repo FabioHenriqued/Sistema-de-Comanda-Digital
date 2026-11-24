@@ -44,6 +44,8 @@ async function iniciarListagem() {
   const confirmacoes = [
     ["pedidoCriado", "Pedido criado com sucesso"],
     ["pedidoAtualizado", "Pedido atualizado com sucesso"],
+    ["pedidoFinalizado", "Pedido finalizado com sucesso"],
+    ["pedidoExcluido", "Pedido excluído com sucesso"],
   ];
   const confirmacao = confirmacoes.find(([chave]) => url.searchParams.get(chave) === "1");
   if (confirmacao) {
@@ -52,13 +54,7 @@ async function iniciarListagem() {
     history.replaceState(history.state, "", url);
   }
 
-  let pedidos;
-  try {
-    pedidos = await listarPedidosEmAberto();
-  } catch {
-    showMessage(estado, "Não foi possível carregar os pedidos.", "error");
-    return;
-  }
+  let pedidos = [];
 
   const { field, input } = createSearchField("Pesquisar pelo número da mesa", {
     name: "mesa", placeholder: "Ex.: 03",
@@ -84,7 +80,22 @@ async function iniciarListagem() {
   }
 
   input.addEventListener("input", atualizarLista);
-  atualizarLista();
+  async function carregarLista() {
+    try {
+      pedidos = await listarPedidosEmAberto();
+      input.disabled = false;
+      atualizarLista();
+    } catch {
+      input.disabled = true;
+      lista.hidden = true;
+      showMessage(estado, "Não foi possível carregar os pedidos.", "error");
+    }
+  }
+
+  window.addEventListener("pageshow", (evento) => {
+    if (evento.persisted && !document.body.hidden) carregarLista();
+  });
+  await carregarLista();
 }
 
 if (!document.body.hidden) iniciarListagem();
