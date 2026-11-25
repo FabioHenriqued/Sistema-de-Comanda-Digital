@@ -5,6 +5,7 @@ import com.comandadigital.comanda_digital_api.entity.requestdto.UsuarioRequestDT
 import com.comandadigital.comanda_digital_api.entity.responsedto.UsuarioResponseDTO;
 import com.comandadigital.comanda_digital_api.exception.RecursoNaoEncontradoException;
 import com.comandadigital.comanda_digital_api.exception.RegraNegocioException;
+import com.comandadigital.comanda_digital_api.repository.PedidoRepository;
 import com.comandadigital.comanda_digital_api.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -16,6 +17,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
+    private final PedidoRepository pedidoRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
     public UsuarioResponseDTO cadastrarUsuario(UsuarioRequestDTO requestDTO){
@@ -94,6 +96,16 @@ public class UsuarioService {
         Usuario usuario = usuarioRepository.findById(id).orElseThrow(() -> new RecursoNaoEncontradoException("Usuario não encontrado"));
 
         return converterParaDTO(usuario);
+    }
+
+    public void excluirUsuario(Integer id){
+        Usuario usuario = usuarioRepository.findById(id).orElseThrow(() -> new RecursoNaoEncontradoException("Usuário não encontrado"));
+
+        if(pedidoRepository.existsByUsuario_Id(id)){
+            throw new RegraNegocioException("Não é possivel excluir um usuário que possui pedidos associados");
+        }
+
+        usuarioRepository.delete(usuario);
     }
 
     private UsuarioResponseDTO converterParaDTO(Usuario usuario){

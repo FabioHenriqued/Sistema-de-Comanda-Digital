@@ -12,6 +12,8 @@ public interface PedidoRepository extends JpaRepository<Pedido, Integer> {
             StatusPedido status
     );
 
+    boolean existsByUsuario_Id(Integer usuarioId);
+
     List<Pedido> findByStatusOrderByHoraAberturaAsc(StatusPedido statusPedido);
 
     List<Pedido> findByStatusAndNumeroMesa(StatusPedido statusPedido, Integer numeroMesa);

@@ -11,6 +11,7 @@ import com.comandadigital.comanda_digital_api.exception.RegraNegocioException;
 import com.comandadigital.comanda_digital_api.repository.PedidoRepository;
 
 import com.comandadigital.comanda_digital_api.repository.ProdutoRepository;
+import com.comandadigital.comanda_digital_api.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,12 +25,15 @@ import java.util.List;
 public class PedidoService {
     private final PedidoRepository pedidoRepository;
     private final ProdutoRepository produtoRepository;
+    private final UsuarioRepository usuarioRepository;
 
     @Transactional
     public PedidoResponseDTO cadastrarPedido(PedidoRequestDTO requestDTO){
         if(requestDTO == null){
             throw new RegraNegocioException("Dados do pedido não informados");
         }
+
+        Usuario usuario = usuarioRepository.findById(requestDTO.usuarioId()).orElseThrow(() -> new RecursoNaoEncontradoException("Usuário não encontrado"));
 
         if(requestDTO.numeroMesa() == null || requestDTO.numeroMesa() <= 0){
             throw new RegraNegocioException("Numero da mesa invalido");
@@ -50,6 +54,7 @@ public class PedidoService {
         pedido.setNumeroMesa(requestDTO.numeroMesa());
         pedido.setStatus(StatusPedido.EM_ABERTO);
         pedido.setHoraAbertura(LocalDateTime.now());
+        pedido.setUsuario(usuario);
 
         BigDecimal valorTotal = BigDecimal.ZERO;
 
