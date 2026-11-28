@@ -11,6 +11,9 @@ import com.comandadigital.comanda_digital_api.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.util.List;
 
@@ -49,15 +52,29 @@ public class UsuarioService {
         usuario.setNome(requestDTO.nome().trim());
         usuario.setEmail(email);
         usuario.setSenhaHash(passwordEncoder.encode(requestDTO.senha()));
-        usuario.setTipo(TipoUsuario.ADMIN);
+        usuario.setTipo(TipoUsuario.FUNCIONARIO);
 
         Usuario usuarioCadastrado = usuarioRepository.save(usuario);
 
         return converterParaDTO(usuarioCadastrado);
     }
 
-    public UsuarioResponseDTO editarUsuario(Integer id, UsuarioRequestDTO requestDTO){
-        Usuario usuario = usuarioRepository.findById(id).orElseThrow(() -> new RecursoNaoEncontradoException("Usuario não encontrado"));
+    public UsuarioResponseDTO editarUsuario(Integer id, UsuarioRequestDTO requestDTO) {
+
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Usuario não encontrado"));
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        String emailAutenticado = authentication.getName();
+
+        Usuario usuarioAutenticado = usuarioRepository.findByEmail(emailAutenticado)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Usuario autenticado não encontrado"));
+
+        if (!usuario.getId().equals(usuarioAutenticado.getId())) {
+            throw new AccessDeniedException("Você não pode editar a conta de outro usuário");
+        }
 
         if(requestDTO == null){
             throw new RegraNegocioException("Dados não informado");

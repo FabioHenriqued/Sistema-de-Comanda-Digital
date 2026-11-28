@@ -52,5 +52,14 @@ public class JwtService {
             return false;
         }
     }
+
+    public String extrairTipo(String token){
+        return Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("tipo", String.class);
+    }
 }
 
