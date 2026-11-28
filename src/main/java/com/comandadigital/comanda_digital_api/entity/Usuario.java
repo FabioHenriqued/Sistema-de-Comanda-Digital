@@ -14,6 +14,9 @@ public class Usuario {
     @Id
     @GeneratedValue
     private Integer id;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TipoUsuario tipo;
     @Column(nullable = false)
     private String nome;
     @Column(unique = true, nullable = false)

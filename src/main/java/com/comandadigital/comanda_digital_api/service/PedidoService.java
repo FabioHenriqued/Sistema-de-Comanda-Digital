@@ -189,6 +189,6 @@ public class PedidoService {
     private PedidoResponseDTO converterParaDTO(Pedido pedido){
         List<ItemPedidoResponseDTO> itens = pedido.getItens().stream().map(item -> new ItemPedidoResponseDTO(item.getProduto().getId(), item.getProduto().getNome(), item.getQuantidade(), item.getPrecoUnitario())).toList();
 
-        return new PedidoResponseDTO(pedido.getId(), pedido.getNumeroMesa(), pedido.getValorTotal(), pedido.getStatus(), itens);
+        return new PedidoResponseDTO(pedido.getUsuario().getId(), pedido.getUsuario().getNome(), pedido.getId(), pedido.getNumeroMesa(), pedido.getValorTotal(), pedido.getStatus(), itens);
     }
 }

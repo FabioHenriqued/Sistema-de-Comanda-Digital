@@ -1,5 +1,6 @@
 package com.comandadigital.comanda_digital_api.service;
 
+import com.comandadigital.comanda_digital_api.entity.TipoUsuario;
 import com.comandadigital.comanda_digital_api.entity.Usuario;
 import com.comandadigital.comanda_digital_api.entity.requestdto.UsuarioRequestDTO;
 import com.comandadigital.comanda_digital_api.entity.responsedto.UsuarioResponseDTO;
@@ -48,6 +49,7 @@ public class UsuarioService {
         usuario.setNome(requestDTO.nome().trim());
         usuario.setEmail(email);
         usuario.setSenhaHash(passwordEncoder.encode(requestDTO.senha()));
+        usuario.setTipo(TipoUsuario.ADMIN);
 
         Usuario usuarioCadastrado = usuarioRepository.save(usuario);
 
@@ -109,6 +111,6 @@ public class UsuarioService {
     }
 
     private UsuarioResponseDTO converterParaDTO(Usuario usuario){
-        return new UsuarioResponseDTO(usuario.getId(), usuario.getNome(), usuario.getEmail());
+        return new UsuarioResponseDTO(usuario.getId(), usuario.getNome(), usuario.getEmail(), usuario.getTipo());
     }
 }
